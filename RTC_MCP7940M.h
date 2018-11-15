@@ -1,3 +1,7 @@
+#include <Arduino.h>
+
+#define byte uint8_t
+
 #define RTC_MCP 0x6F
 #define RTCSEC 0x00
 #define RTCMIN 0x01
@@ -28,8 +32,8 @@ class RTC_MCP7940M{
   public:
 
   static void begin();
-  static void timeSet(byte second, byte minute, byte hour, byte wkday, byte date, byte month, byte year);
   static byte stopClock();
+  static void timeSet(byte second, byte minute, byte hour, byte wkday, byte date, byte month, byte year);
   static void clockSelect(bool external_clock = false);
   static void alarmEnable(bool alarm0 = true, bool set_alarm = true, bool alarm_low = true, int alarm_mask_setting = 1);
   static void alarmAdjust(bool alarm0 = true, int second = 0, int minute = 0, int hour = 0, int wkday = 1, int date = 1, int month = 1);
