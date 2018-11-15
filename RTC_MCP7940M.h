@@ -28,15 +28,15 @@ class RTC_MCP7940M{
   public:
 
   static void begin();
-  static void timeSet(byte second, byte minute, byte hour, byte wkday, byte date, byte month, byte year)
-  static byte stopClock()
-  static void clockSelect(bool external_clock = false)
-  static void alarmEnable(bool alarm0 = true, bool set_alarm = true, bool alarm_low = true, int alarm_mask_setting = 1)
-  static void alarmAdjust(bool alarm0 = true, int second = 0, int minute = 0, int hour = 0, int wkday = 1, int date = 1, int month = 1)
-  static void configure(int Mode = 1, bool out_pin = true, bool trim = false, int sqwave_set = 0){
-  static void trimConfig(int cycles = 0, bool add = true)
+  static void timeSet(byte second, byte minute, byte hour, byte wkday, byte date, byte month, byte year);
+  static byte stopClock();
+  static void clockSelect(bool external_clock = false);
+  static void alarmEnable(bool alarm0 = true, bool set_alarm = true, bool alarm_low = true, int alarm_mask_setting = 1);
+  static void alarmAdjust(bool alarm0 = true, int second = 0, int minute = 0, int hour = 0, int wkday = 1, int date = 1, int month = 1);
+  static void configure(int Mode = 1, bool out_pin = true, bool trim = false, int sqwave_set = 0);
+  static void trimConfig(int cycles = 0, bool add = true);
 
   private:
-  static byte decToBcd(byte val)
+  static byte decToBcd(byte val);
   
 }
