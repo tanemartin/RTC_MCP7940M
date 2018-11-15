@@ -39,4 +39,4 @@ class RTC_MCP7940M{
   private:
   static byte decToBcd(byte val);
   
-}
+};
