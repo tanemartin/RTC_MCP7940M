@@ -1,8 +1,60 @@
 /* Does not support 12-hr clock cycle*/
 #include <Wire.h>
+#include "RTC_MCP7940M.h"
+#define byte uint8_t
+
 
 byte decToBcd(byte val){
   return ( ((val / 10) << 4) | (val % 10) );
+}
+
+
+byte RTC_MCP7940M::stopClock(){
+/* This function should  be run after a clock source has been selected 
+ *  Returns 0 if using external clock
+ *  Returns 1 if using external crystal
+ *  Returns -1 if neither
+*/
+    byte out;
+    
+    // Read control reg
+    Wire.beginTransmission(RTC_MCP);
+    Wire.write(CONTROL);
+    Wire.endTransmission();
+    Wire.requestFrom(RTC_MCP, 1);
+    byte control_reg = Wire.read();
+
+    // Read seconds register
+    Wire.beginTransmission(RTC_MCP);
+    Wire.write(RTCSEC);
+    Wire.endTransmission();
+    Wire.requestFrom(RTC_MCP, 1);
+    byte sec_reg = Wire.read();
+
+    if (bitRead(control_reg, EXTOSC)){
+      out = 0;
+    } else if (bitRead(sec_reg, ST)){
+      out = 1; 
+    } else{
+      out = -1;
+    }
+
+    bitClear(control_reg, EXTOSC);
+    bitClear(sec_reg, ST);
+
+    // Write control reg
+    Wire.beginTransmission(RTC_MCP);
+    Wire.write(CONTROL);
+    Wire.write(control_reg);
+    Wire.endTransmission();
+
+    // Write seconds register
+    Wire.beginTransmission(RTC_MCP);
+    Wire.write(RTCSEC);
+    Wire.write(sec_reg);
+    Wire.endTransmission();
+
+    return out;
 }
 
 void RTC_MCP7940M::begin(){
@@ -17,6 +69,7 @@ void RTC_MCP7940M::timeSet(byte second, byte minute, byte hour, byte wkday, byte
   byte new_hour;
   byte new_month;
   byte register_val;
+  byte clock_source;
   
 
   // Stop clock
@@ -24,9 +77,9 @@ void RTC_MCP7940M::timeSet(byte second, byte minute, byte hour, byte wkday, byte
   do
   {
     if (counter == 0){ 
-      byte clock_source = RTC_MCP7940M.stopClock(); // Stop clock (returns 0 for ext clock, 1 for crystal
+      clock_source = stopClock(); // Stop clock (returns 0 for ext clock, 1 for crystal
     } else if (counter % 10 == 0){
-      (void) RTC_MCP7940M.stopClock(); // After running 10 loops, restop clock (ignore func output)
+      (void) stopClock(); // After running 10 loops, restop clock (ignore func output)
     }
     Wire.beginTransmission(RTC_MCP);
     Wire.write(RTCWKDAY);
@@ -35,18 +88,18 @@ void RTC_MCP7940M::timeSet(byte second, byte minute, byte hour, byte wkday, byte
     weekday_reg = Wire.read();
     oscillator_running = bitRead(weekday_reg, 5);
     counter++;
-  } while (!oscillator_running)
+  } while (!oscillator_running);
   
   // Set seconds register (ignoring ST bit for now)
   Wire.beginTransmission(RTC_MCP);
   Wire.write(RTCSEC);
-  Wire.write(decToBCD(second));
+  Wire.write(decToBcd(second));
 
   // Set minutes register
-  Wire.write(decToBCD(minute));
+  Wire.write(decToBcd(minute));
 
   // Set hour register (24 hour cycle)
-  new_hour = dectoBcd(hour);
+  new_hour = decToBcd(hour);
   new_hour |= B01000000; // Set 24 hour cycle bit
   Wire.write(new_hour);
 
@@ -97,55 +150,7 @@ void RTC_MCP7940M::timeSet(byte second, byte minute, byte hour, byte wkday, byte
   Wire.endTransmission();
 }
 
-byte RTC_MCP7940M::stopClock(){
-/* This function should  be run after a clock source has been selected 
- *  Returns 0 if using external clock
- *  Returns 1 if using external crystal
- *  Returns -1 if neither
-*/
-    byte out;
-    
-    // Read control reg
-    Wire.beginTransmission(RTC_MCP);
-    Wire.write(CONTROL);
-    Wire.endTransmission();
-    Wire.requestFrom(RTC_MCP, 1);
-    byte control_reg = Wire.read();
-
-    // Read seconds register
-    Wire.beginTransmission(RTC_MCP);
-    Wire.write(RTCSEC);
-    Wire.endTransmission();
-    Wire.requestFrom(RTC_MCP, 1);
-    byte sec_reg = Wire.read();
-
-    if (bitRead(control_reg, EXTOSC)){
-      out = 0;
-    } else if (bitRead(sec_reg, ST)){
-      out = 1; 
-    } else{
-      out = -1;
-    }
-
-    bitClear(control_reg, EXTOSC);
-    bitClear(sec_reg, ST);
-
-    // Write control reg
-    Wire.beginTransmission(RTC_MCP);
-    Wire.write(CONTROL);
-    Wire.write(control_reg);
-    Wire.endTransmission();
-
-    // Write seconds register
-    Wire.beginTransmission(RTC_MCP);
-    Wire.write(RTCSEC);
-    Wire.write(sec_reg)
-    Wire.endTransmission();
-
-    return out;
-}
-
-void RTC_MCP7940::clockSelect(bool external_clock){
+void RTC_MCP7940M::clockSelect(bool external_clock){
   
     // Read control reg
     Wire.beginTransmission(RTC_MCP);
@@ -178,11 +183,11 @@ void RTC_MCP7940::clockSelect(bool external_clock){
     // Write seconds register
     Wire.beginTransmission(RTC_MCP);
     Wire.write(RTCSEC);
-    Wire.write(sec_reg)
+    Wire.write(sec_reg);
     Wire.endTransmission();
 }
 
-void RTC_MCP7940::alarmEnable(bool alarm0, bool set_alarm, bool alarm_low, int alarm_mask_setting){
+void RTC_MCP7940M::alarmEnable(bool alarm0, bool set_alarm, bool alarm_low, int alarm_mask_setting){
 /* alarm0 = true for alarm 0, alarm0 = false for alarm 1
  * set_alarm = true to enable, set_alarm = false to disable
  * alarm_low = true means output pin goes low on alarm
@@ -273,7 +278,7 @@ void RTC_MCP7940::alarmEnable(bool alarm0, bool set_alarm, bool alarm_low, int a
   Wire.endTransmission();
 }
 
-void RTC_MCP7940::alarmAdjust(bool alarm0, int second, int minute, int hour, int wkday, int date, int month){
+void RTC_MCP7940M::alarmAdjust(bool alarm0, int second, int minute, int hour, int wkday, int date, int month){
   // Set the appropriate alarm registers to the input times (doublecheck that the initialized values are valid)
   // This function clears the alarm flag
 
@@ -305,8 +310,8 @@ void RTC_MCP7940::alarmAdjust(bool alarm0, int second, int minute, int hour, int
   } else{
     Wire.write(ALM1WKDAY);
   }
-  Wire.endTransmission()
-  Wire.requestFrom(RTC_MCP, 1):
+  Wire.endTransmission();
+  Wire.requestFrom(RTC_MCP, 1);
   byte weekday_reg = Wire.read();
 
   // Adjust weekday register to align with input
