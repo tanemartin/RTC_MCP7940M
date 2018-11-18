@@ -1,3 +1,5 @@
+#ifndef RTC_MCP7940M
+#define RTC_MCP7940M
 #include <Arduino.h>
 
 #define byte uint8_t
@@ -44,3 +46,5 @@ class RTC_MCP7940M{
   static byte decToBcd(byte val);
   
 };
+
+#endif
