@@ -4,7 +4,7 @@
 #define byte uint8_t
 
 
-byte decToBcd(byte val){
+byte RTC_MCP7940M::decToBcd(byte val){
   return ( ((val / 10) << 4) | (val % 10) );
 }
 
